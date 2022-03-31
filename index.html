@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./styles.css" />
+    <title>Document</title>
+  </head>
+  <body>
+    <div class="game-container">
+      <div id="startingScreenEl">
+        <h1>PAGMAN</h1>
+        <div class="circles">
+          <div class="circle"></div>
+          <div class="circle"></div>
+          <div class="circle"></div>
+          <div class="circle"></div>
+          <div class="circle"></div>
+          <div class="circle gold"></div>
+        </div>
+      </div>
+      <div id="banner">
+        <h1 id="endGamePhraseEl">You Won!</h1>
+        <p>Your score</p>
+        <div id="winnerScore">0</div>
+      </div>
+      <canvas id="game"></canvas>
+      <div id="game-data">
+        <h1>PUGMAN</h1>
+        <hr />
+        <p>Score: <span id="score">0</span></p>
+        <hr />
+        <p>Amount of Ghosts</p>
+        <div class="btn-container">
+          <button id="decreaseEl">&lt;</button>
+          <span id="ghostsAmountEl">3</span>
+          <button id="increaseEl">&gt;</button>
+        </div>
+        <p>Speed of Ghosts</p>
+        <div class="btn-container">
+          <button id="decreaseSpeedEl">&lt;</button>
+          <span id="ghostsSpeedEl">3</span>
+          <button id="increaseSpeedEl">&gt;</button>
+        </div>
+        <hr />
+        <button id="start">Start Game</button>
+        <button id="stop">Stop</button>
+      </div>
+    </div>
+    <script src="./map.js" type="module"></script>
+    <script src="./game.js" type="module"></script>
+  </body>
+</html>
