@@ -10,4 +10,4 @@
 - CSS
 - JavaScript
 
-### You can try it clicking to the link - [Play Game](https://gentle-toffee-dd0239.netlify.app/ "PUGMAN-GAME")
+### You can try it clicking to the link - [Play Game](https://stellular-youtiao-db7ad1.netlify.app/ "PUGMAN-GAME")
