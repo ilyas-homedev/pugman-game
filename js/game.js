@@ -1,8 +1,8 @@
 import map from "./map.js";
 
 const canvas = document.querySelector("canvas");
-canvas.width = 760;
-canvas.height = 840;
+const canvasContainer = document.querySelector(".canvas-container");
+const gameDataEl = document.querySelector("#game-data");
 
 const c = canvas.getContext("2d");
 
@@ -19,23 +19,61 @@ const ghostsSpeedEl = document.querySelector("#ghostsSpeedEl");
 const startBtn = document.querySelector("#start");
 const stopBtn = document.querySelector("#stop");
 
+const startingScreenEl = document.querySelector("#startingScreenEl");
 const banner = document.querySelector("#banner");
 const endGamePhraseEl = document.querySelector("#endGamePhraseEl");
 const winnerScoreEl = document.querySelector("#winnerScore");
-
-const startingScreenEl = document.querySelector("#startingScreenEl");
 
 // arrays and constants for displaying all parts of the game
 let boundaries = [];
 let pellets = [];
 let boosters = [];
 let ghosts = [];
-let boundaryWidth = 40; // Width and Height of boundary are equal to each other
-let playerSpeed = 4;
+let boundaryWidth;
+let playerRadius;
+let ghostRadius;
+let playerSpeed;
 let ghostSpeed = 3;
 let amountOfGhosts = 3;
+let minGhostSpeed;
+let maxGhostSpeed;
 let score = 0;
 let endGamePhrase = "You Lose!";
+
+// Reset values depending on the screen size
+function resetValues() {
+  canvas.height = canvasContainer.offsetHeight;
+  gameDataEl.style.height = canvasContainer.offsetHeight;
+
+  boundaryWidth =
+    Math.floor(canvas.height / 21) % 2 === 0
+      ? Math.floor(canvas.height / 21)
+      : Math.floor(canvas.height / 21) - 1;
+  if (boundaryWidth > 40) {
+    boundaryWidth = 40;
+  }
+
+  canvas.width = 19 * boundaryWidth;
+  canvasContainer.style.width = canvas.width;
+
+  playerRadius = Math.floor((boundaryWidth * 0.75) / 2);
+  ghostRadius = Math.floor((boundaryWidth * 0.75) / 2);
+
+  if (boundaryWidth < 30) {
+    playerSpeed = 2;
+    minGhostSpeed = 2;
+    maxGhostSpeed = 3;
+  } else if (boundaryWidth < 40) {
+    playerSpeed = 3;
+    minGhostSpeed = 2;
+    maxGhostSpeed = 3;
+  } else {
+    playerSpeed = 4;
+    minGhostSpeed = 2;
+    maxGhostSpeed = 5;
+  }
+}
+resetValues();
 
 decreaseBtn.addEventListener("click", () => {
   if (amountOfGhosts > 2) {
@@ -52,14 +90,14 @@ increaseBtn.addEventListener("click", () => {
 });
 
 decreaseSpeedBtn.addEventListener("click", () => {
-  if (ghostSpeed > 2) {
+  if (ghostSpeed > minGhostSpeed) {
     ghostSpeed -= 1;
   }
   ghostsSpeedEl.textContent = ghostSpeed;
 });
 
 increaseSpeedBtn.addEventListener("click", () => {
-  if (ghostSpeed < 5) {
+  if (ghostSpeed < maxGhostSpeed) {
     ghostSpeed += 1;
   }
   ghostsSpeedEl.textContent = ghostSpeed;
@@ -173,46 +211,48 @@ class Ghost {
 function createMap() {
   map.forEach((row, rawIndex) => {
     row.forEach((wall, wallIndex) => {
-      if (wall === "-") {
-        boundaries.push(
-          new Boundary(
-            wallIndex * boundaryWidth,
-            rawIndex * boundaryWidth, // Width and Height of boundary are equal to each other
-            boundaryWidth,
-            boundaryWidth
-          )
-        );
-      }
-      if (wall === ".") {
-        pellets.push(
-          new Pellet(
-            wallIndex * boundaryWidth + boundaryWidth / 2,
-            rawIndex * boundaryWidth + boundaryWidth / 2, // Width and Height of boundary are equal to each other
-            2
-          )
-        );
-      }
-      if (wall === "o") {
-        boosters.push(
-          new Booster(
-            wallIndex * boundaryWidth + boundaryWidth / 2,
-            rawIndex * boundaryWidth + boundaryWidth / 2, // Width and Height of boundary are equal to each other
-            8
-          )
-        );
-      }
-      if (wall === "g") {
-        for (let i = 0; i < amountOfGhosts; i++) {
-          ghosts.push(
-            new Ghost({
-              x: wallIndex * boundaryWidth + boundaryWidth / 2,
-              y: rawIndex * boundaryWidth + boundaryWidth / 2, // Width and Height of boundary are equal to each other
-              radius: 15,
-              velocity: { x: ghostSpeed, y: 0 },
-              ready: false,
-            })
+      switch (wall) {
+        case "-":
+          boundaries.push(
+            new Boundary(
+              wallIndex * boundaryWidth,
+              rawIndex * boundaryWidth, // Width and Height of boundary are equal to each other
+              boundaryWidth,
+              boundaryWidth
+            )
           );
-        }
+          break;
+        case ".":
+          pellets.push(
+            new Pellet(
+              wallIndex * boundaryWidth + boundaryWidth / 2,
+              rawIndex * boundaryWidth + boundaryWidth / 2, // Width and Height of boundary are equal to each other
+              2
+            )
+          );
+          break;
+        case "o":
+          boosters.push(
+            new Booster(
+              wallIndex * boundaryWidth + boundaryWidth / 2,
+              rawIndex * boundaryWidth + boundaryWidth / 2, // Width and Height of boundary are equal to each other
+              8
+            )
+          );
+          break;
+        case "g":
+          for (let i = 0; i < amountOfGhosts; i++) {
+            ghosts.push(
+              new Ghost({
+                x: wallIndex * boundaryWidth + boundaryWidth / 2,
+                y: rawIndex * boundaryWidth + boundaryWidth / 2, // Width and Height of boundary are equal to each other
+                radius: ghostRadius,
+                velocity: { x: ghostSpeed, y: 0 },
+                ready: false,
+              })
+            );
+          }
+          break;
       }
     });
   });
@@ -221,7 +261,7 @@ function createMap() {
 let player = new Player({
   x: 9 * boundaryWidth + boundaryWidth / 2,
   y: 11 * boundaryWidth + boundaryWidth / 2,
-  radius: 15,
+  radius: playerRadius,
   velocity: { x: -playerSpeed, y: 0 },
 });
 
@@ -252,6 +292,8 @@ addEventListener("keydown", (event) => {
       keys.up.pressed = true;
       lastKey = "ArrowUp";
       break;
+    case " ":
+      startGame();
   }
 });
 
@@ -290,19 +332,106 @@ let animationId;
 function animate() {
   c.clearRect(0, 0, innerWidth, innerHeight);
   animationId = requestAnimationFrame(animate);
+
   scoreEl.textContent = score;
   winnerScoreEl.textContent = score;
 
-  // Player collides with boundaries
+  handlePlayerCollisionsWithBoundaries();
+  // Creating boundaries
+  // Setting player's and ghost's velocity to 0 in case of collisions with boundaries
+  boundariesSettings();
+  // Creating pellets and eating it + changing score
+  pelletsSettings();
+  // Win the game
+  if (pellets.length === 0) {
+    gameOver("You Won!");
+  }
+  // Creating boosters and eating it + changing score
+  boostersSettings();
+  // Creating ghosts, processing it's behaviour and interaction with boundaries and player
+  ghostSettings();
+
+  player.update();
+}
+
+// Each ghosts appears after time
+function prepareGhost(ghost, index) {
+  setTimeout(() => {
+    ghost.ready = true;
+  }, index * 5000);
+}
+
+// Ghosts become blue and you can eat them
+function scaredGhosts() {
+  ghosts.forEach((ghost) => {
+    const defaultColor = ghost.color;
+    if (defaultColor !== "blue") {
+      ghost.color = "blue";
+      setTimeout(() => {
+        ghost.color = defaultColor;
+      }, 6000);
+    }
+  });
+}
+
+// Starts new game
+function startGame() {
+  stopGame();
+  banner.classList.remove("close");
+  startingScreenEl.style.display = "none";
+  player = new Player({
+    x: 9 * boundaryWidth + boundaryWidth / 2,
+    y: 11 * boundaryWidth + boundaryWidth / 2,
+    radius: playerRadius,
+    velocity: { x: -playerSpeed, y: 0 },
+  });
+  decreaseBtn.disabled = true;
+  increaseBtn.disabled = true;
+  decreaseSpeedBtn.disabled = true;
+  increaseSpeedBtn.disabled = true;
+  startBtn.disabled = true;
+  stopBtn.disabled = false;
+  createMap();
+  animate();
+}
+
+// Restarts the game
+function stopGame() {
+  resetValues();
+  boundaries = [];
+  pellets = [];
+  boosters = [];
+  ghosts = [];
+  score = 0;
+  ghostsAmountEl.textContent = amountOfGhosts;
+  ghostsSpeedEl.textContent = ghostSpeed;
+  decreaseBtn.disabled = false;
+  increaseBtn.disabled = false;
+  decreaseSpeedBtn.disabled = false;
+  increaseSpeedBtn.disabled = false;
+  startBtn.disabled = false;
+  stopBtn.disabled = true;
+  cancelAnimationFrame(animationId);
+}
+
+// After winning or loosing a game
+function gameOver(phrase) {
+  stopGame();
+  endGamePhrase = phrase;
+  banner.classList.add("close");
+  endGamePhraseEl.textContent = endGamePhrase;
+}
+
+function handlePlayerCollisionsWithBoundaries() {
   if (keys.right.pressed && lastKey === "ArrowRight") {
     for (let i = 0; i < boundaries.length; i++) {
       const boundary = boundaries[i];
-      if (
-        circleCollidesWith({
-          circle: { ...player, velocity: { x: playerSpeed, y: 0 } },
-          anything: boundary,
-        })
-      ) {
+      const playerCollidesWithBoundaryRight = circleCollidesWith({
+        circle: { ...player, velocity: { x: playerSpeed, y: 0 } },
+        anything: boundary,
+      });
+
+      if (playerCollidesWithBoundaryRight) {
         player.velocity.x = 0;
         break;
       } else {
@@ -313,12 +442,12 @@ function animate() {
   if (keys.left.pressed && lastKey === "ArrowLeft") {
     for (let i = 0; i < boundaries.length; i++) {
       const boundary = boundaries[i];
-      if (
-        circleCollidesWith({
-          circle: { ...player, velocity: { x: -playerSpeed, y: 0 } },
-          anything: boundary,
-        })
-      ) {
+      const playerCollidesWithBoundaryLeft = circleCollidesWith({
+        circle: { ...player, velocity: { x: -playerSpeed, y: 0 } },
+        anything: boundary,
+      });
+
+      if (playerCollidesWithBoundaryLeft) {
         player.velocity.x = 0;
         break;
       } else {
@@ -329,12 +458,12 @@ function animate() {
   if (keys.down.pressed && lastKey === "ArrowDown") {
     for (let i = 0; i < boundaries.length; i++) {
       const boundary = boundaries[i];
-      if (
-        circleCollidesWith({
-          circle: { ...player, velocity: { x: 0, y: playerSpeed } },
-          anything: boundary,
-        })
-      ) {
+      const playerCollidesWithBoundaryDown = circleCollidesWith({
+        circle: { ...player, velocity: { x: 0, y: playerSpeed } },
+        anything: boundary,
+      });
+
+      if (playerCollidesWithBoundaryDown) {
         player.velocity.y = 0;
         break;
       } else {
@@ -345,12 +474,12 @@ function animate() {
   if (keys.up.pressed && lastKey === "ArrowUp") {
     for (let i = 0; i < boundaries.length; i++) {
       const boundary = boundaries[i];
-      if (
-        circleCollidesWith({
-          circle: { ...player, velocity: { x: 0, y: -playerSpeed } },
-          anything: boundary,
-        })
-      ) {
+      const playerCollidesWithBoundaryUp = circleCollidesWith({
+        circle: { ...player, velocity: { x: 0, y: -playerSpeed } },
+        anything: boundary,
+      });
+
+      if (playerCollidesWithBoundaryUp) {
         player.velocity.y = 0;
         break;
       } else {
@@ -358,8 +487,9 @@ function animate() {
       }
     }
   }
+}
 
-  // Creating boundaries
+function boundariesSettings() {
   boundaries.forEach((boundary) => {
     boundary.draw();
 
@@ -375,62 +505,69 @@ function animate() {
       }
     });
   });
+}
 
-  // Creating pellets and eating it + changing score
+function pelletsSettings() {
   pellets.forEach((pellet, pelletIndex) => {
     pellet.draw();
+    const distanceToPlayer = Math.hypot(
+      player.x - pellet.x,
+      player.y - pellet.y
+    );
 
-    if (Math.hypot(player.x - pellet.x, player.y - pellet.y) <= 0) {
+    if (distanceToPlayer <= 0) {
       setTimeout(() => pellets.splice(pelletIndex, 1), 0);
       score += 100;
     }
   });
+}
 
-  // Win the game
-  if (pellets.length === 0) {
-    gameOver("You Won!");
-  }
-
-  // Creating boosters and eating it + changing score
+function boostersSettings() {
   boosters.forEach((booster, boosterIndex) => {
     booster.draw();
+    const distanceToPlayer = Math.hypot(
+      player.x - booster.x,
+      player.y - booster.y
+    );
 
-    if (Math.hypot(player.x - booster.x, player.y - booster.y) <= 0) {
+    if (distanceToPlayer <= 0) {
       setTimeout(() => boosters.splice(boosterIndex, 1), 0);
       score += 200;
 
       scaredGhosts();
     }
   });
+}
 
-  // Creating ghosts
+function ghostSettings() {
   ghosts.forEach((ghost, ghostIndex) => {
     prepareGhost(ghost, ghostIndex);
     if (ghost.ready) {
       ghost.update();
     }
-
-    if (
+    const ghostEatsPlayer =
       Math.hypot(player.x - ghost.x, player.y - ghost.y) <=
         player.radius + ghost.radius &&
       ghost.color !== "blue" &&
-      ghost.ready
-    ) {
+      ghost.ready;
+
+    if (ghostEatsPlayer) {
       gameOver("You Lose!");
     }
-    if (
+
+    const playerEatsGhost =
       Math.hypot(player.x - ghost.x, player.y - ghost.y) <=
-        player.radius + ghost.radius &&
-      ghost.color === "blue"
-    ) {
+        player.radius + ghost.radius && ghost.color === "blue";
+
+    if (playerEatsGhost) {
       ghosts.splice(ghostIndex, 1);
       score += 300;
       ghosts.push(
         new Ghost({
           x: 9 * boundaryWidth + boundaryWidth / 2,
           y: 9 * boundaryWidth + boundaryWidth / 2,
-          radius: 15,
-          velocity: { x: 2, y: 0 },
+          radius: ghostRadius,
+          velocity: { x: ghostSpeed, y: 0 },
           ready: false,
         })
       );
@@ -517,70 +654,4 @@ function animate() {
       ghost.prevCollisions = [];
     }
   });
-
-  player.update();
-}
-
-// Each ghosts appears after time
-function prepareGhost(ghost, index) {
-  setTimeout(() => {
-    ghost.ready = true;
-  }, index * 5000);
-}
-
-function scaredGhosts() {
-  ghosts.forEach((ghost) => {
-    const defaultColor = ghost.color;
-    if (defaultColor !== "blue") {
-      ghost.color = "blue";
-      setTimeout(() => {
-        ghost.color = defaultColor;
-      }, 6000);
-    }
-  });
-}
-
-function startGame() {
-  banner.classList.remove("close");
-  startingScreenEl.style.display = "none";
-  player = new Player({
-    x: 9 * boundaryWidth + boundaryWidth / 2,
-    y: 11 * boundaryWidth + boundaryWidth / 2,
-    radius: 15,
-    velocity: { x: -playerSpeed, y: 0 },
-  });
-  decreaseBtn.disabled = true;
-  increaseBtn.disabled = true;
-  decreaseSpeedBtn.disabled = true;
-  increaseSpeedBtn.disabled = true;
-  startBtn.disabled = true;
-  stopBtn.disabled = false;
-  createMap();
-  animate();
-}
-
-function stopGame() {
-  // startingScreenEl.style.display = "flex";
-  boundaries = [];
-  pellets = [];
-  boosters = [];
-  ghosts = [];
-  score = 0;
-  ghostsAmountEl.textContent = amountOfGhosts;
-  ghostsSpeedEl.textContent = ghostSpeed;
-  playerSpeed = 4;
-  decreaseBtn.disabled = false;
-  increaseBtn.disabled = false;
-  decreaseSpeedBtn.disabled = false;
-  increaseSpeedBtn.disabled = false;
-  startBtn.disabled = false;
-  stopBtn.disabled = true;
-  cancelAnimationFrame(animationId);
-}
-
-function gameOver(phrase) {
-  stopGame();
-  endGamePhrase = phrase;
-  banner.classList.add("close");
-  endGamePhraseEl.textContent = endGamePhrase;
 }

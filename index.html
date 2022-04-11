@@ -4,28 +4,30 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./styles/styles.css" />
     <title>Document</title>
   </head>
   <body>
     <div class="game-container">
-      <div id="startingScreenEl">
-        <h1>PUGMAN</h1>
-        <div class="circles">
-          <div class="circle"></div>
-          <div class="circle"></div>
-          <div class="circle"></div>
-          <div class="circle"></div>
-          <div class="circle"></div>
-          <div class="circle gold"></div>
+      <div class="canvas-container">
+        <div id="startingScreenEl">
+          <h1>PUGMAN</h1>
+          <div class="circles">
+            <div class="circle"></div>
+            <div class="circle"></div>
+            <div class="circle"></div>
+            <div class="circle"></div>
+            <div class="circle"></div>
+            <div class="circle gold"></div>
+          </div>
         </div>
+        <div id="banner">
+          <h1 id="endGamePhraseEl">You Won!</h1>
+          <p>Your score</p>
+          <div id="winnerScore">0</div>
+        </div>
+        <canvas id="game"></canvas>
       </div>
-      <div id="banner">
-        <h1 id="endGamePhraseEl">You Won!</h1>
-        <p>Your score</p>
-        <div id="winnerScore">0</div>
-      </div>
-      <canvas id="game"></canvas>
       <div id="game-data">
         <h1>PUGMAN</h1>
         <hr />
@@ -48,7 +50,7 @@
         <button id="stop">Stop</button>
       </div>
     </div>
-    <script src="./map.js" type="module"></script>
-    <script src="./game.js" type="module"></script>
+    <script src="./js/map.js" type="module"></script>
+    <script src="./js/game.js" type="module"></script>
   </body>
 </html>
